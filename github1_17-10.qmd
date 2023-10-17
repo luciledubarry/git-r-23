@@ -14,3 +14,49 @@ library(tidyr)
 library(dplyr)
 ```
 
+### Multiple lines on a single graph
+```{r}
+eustock <- as.data.frame(EuStockMarkets)
+eustock <- eustock |> mutate(time=1:n())
+```
+
+```{r}
+ggplot(eustock, aes(x=time, y=DAX)) +
+  geom_line()
+```
+How to plot 2 lines (with different values y) in the same graph ?
+```{r}
+ggplot(eustock, aes(x=time, y=DAX)) +
+  geom_line() +
+  geom_line(mapping = aes(y=CAC), color = "blue")
+```
+Problems in this representation:
+- the y-axis name is wrong
+- colors must be specified manually
+- we miss a association between colors and names
+
+We must reorganize the data set in a way that includes the mapping specifications. 
+
+## Tidyr based solution
+
+We must restructure the data set in a long format:
+```{r}
+long_eustock <- eustock |> pivot_longer(-time, names_to = "Stock index", values_to = "Value")
+```
+pivot_longer = inverse of pivot_wider
+At each time, the table links a variable 'value' associated with a name. The parameters names_to and values_to change the title of the columns. 
+
+```{r}
+ggplot(long_eustock, aes(x = time, y = Value, group = `Stock index`, color = `Stock index`)) +
+  geom_line()
+```
+The grouping with "Stock index" allows to display the temporal evolution of the values of each stock group. 
+
+```{r}
+#| fig-height: 10
+ggplot(long_eustock, aes(x = time, y = Value)) +
+  geom_line() +
+  facet_wrap(~`Stock index`, ncol = 1, scales = "free_y")
+```
+This representation is easier to read but doesn't allow to compare the evolution of each stock group. 
+
